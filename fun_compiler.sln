@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.808.4
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fun_compiler", "fun_compiler\fun_compiler.csproj", "{EC560C9C-FFDD-4CEE-B177-E6E57F1A93D7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EC560C9C-FFDD-4CEE-B177-E6E57F1A93D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC560C9C-FFDD-4CEE-B177-E6E57F1A93D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC560C9C-FFDD-4CEE-B177-E6E57F1A93D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC560C9C-FFDD-4CEE-B177-E6E57F1A93D7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FD2A3B80-14DF-47DA-97E8-0323765C921C}
+	EndGlobalSection
+EndGlobal
