@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.808.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fun_compiler", "fun_compiler\fun_compiler.csproj", "{EC560C9C-FFDD-4CEE-B177-E6E57F1A93D7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lexer", "Lexer\Lexer.csproj", "{03562AE3-6B81-4EB6-A08A-0E674888CE2E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{EC560C9C-FFDD-4CEE-B177-E6E57F1A93D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EC560C9C-FFDD-4CEE-B177-E6E57F1A93D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EC560C9C-FFDD-4CEE-B177-E6E57F1A93D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03562AE3-6B81-4EB6-A08A-0E674888CE2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03562AE3-6B81-4EB6-A08A-0E674888CE2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03562AE3-6B81-4EB6-A08A-0E674888CE2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03562AE3-6B81-4EB6-A08A-0E674888CE2E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
