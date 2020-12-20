@@ -5,10 +5,10 @@ using System.Text.RegularExpressions;
 
 namespace Lexer
 {
-    public class Lexer
+    public class SulzmannLexer
     {
         private readonly Rexp rules;
-        public Lexer(Rexp rules)
+        public SulzmannLexer(Rexp rules)
         {
             this.rules = rules;
         }

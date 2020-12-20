@@ -3,24 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
+/*
+ * Adapted from Jack Vanlightly's blog post:
+ * https://jack-vanlightly.com/blog/2016/2/3/creating-a-simple-tokenizer-lexer-in-c
+ */
+
 namespace Lexer
 {
-    public enum TokenType
-    {
-        KEYWORD,
-        IDENTIFIER,
-        ARITH_OP,
-        COMP_BOOL_OP,
-        OPERATOR,
-        NUMBER,
-        SEMICOLON,
-        STRING,
-        LPAREN,
-        RPAREN,
-        COMMENT,
-        WHITESPACE
-    }
-    
 
     public class Lexer
     {

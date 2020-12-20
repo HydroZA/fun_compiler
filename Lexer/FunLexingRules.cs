@@ -10,23 +10,27 @@ using System.Text.RegularExpressions;
 
 namespace Lexer
 {
-    public static class WhileLexingRules
+    public static class FunLexingRules
     {
         public static readonly List<TokenDefinition> rules = new List<TokenDefinition>
         {
-            new TokenDefinition(TokenType.KEYWORD, @"^skip|^while|^do|^if|^then|^else|^read|^write|^for|^to|^true|^false|^:=|^upto"),
+            new TokenDefinition(TokenType.COMMENT, @"^\/\/([0-9]| |[._><=;,:\\]|[a-zA-Z])*"),
+            new TokenDefinition(TokenType.KEYWORD, @"^def|^val|^if|^then|^else|^write|^true|^false"),
+          //  new TokenDefinition(TokenType.CALL, @"\w+(?=\(.*\))"), // positive lookahead
+            new TokenDefinition(TokenType.TYPE, @"^Double|^Int|^Void"),
             new TokenDefinition(TokenType.STRING, @"^""([@._ ><=;,:\\[a-zA-Z]|\s|[0 - 9])*"""),
-            new TokenDefinition(TokenType.IDENTIFIER, @"^[a-zA-Z](_|[a-zA-Z]|[0-9])*"),
-            new TokenDefinition(TokenType.OPERATOR, @"^==|^!=|^<|^>|^<=|^>=|^!"),
-            new TokenDefinition(TokenType.COMP_BOOL_OP, @"^\|\||^&&"),
+            new TokenDefinition(TokenType.GLOBAL_IDENTIFIER, @"^[A-Z][a-zA-Z0-9_]*"),
+            new TokenDefinition(TokenType.LOCAL_IDENTIFIER, @"^[a-z][a-zA-Z0-9_]*"),
+            new TokenDefinition(TokenType.BOOL_OP, @"^==|^!=|^<=|^>=|^!|^>|^<"),
+            new TokenDefinition(TokenType.ASSIGN_OP, @"^:|^="),
             new TokenDefinition(TokenType.ARITH_OP, @"^-|^\+|^\*|^\/|^%"),
+            new TokenDefinition(TokenType.FLOAT_NUMBER, @"^-?\d+\.\d*"),
             new TokenDefinition(TokenType.NUMBER, @"^0|^-?[1-9][0-9]*"),
             new TokenDefinition(TokenType.SEMICOLON, @"^;"),
             new TokenDefinition(TokenType.LPAREN, @"^{|^\("),
             new TokenDefinition(TokenType.RPAREN, @"^}|^\)"),
-            new TokenDefinition(TokenType.WHITESPACE, @"^\s"),
-            new TokenDefinition(TokenType.COMMENT, @"^\/\/([0-9]| |[._><=;,:\\]|[a-zA-Z])*")
+            new TokenDefinition(TokenType.ARG_SEPERATOR, @"^,"),
+            new TokenDefinition(TokenType.WHITESPACE, @"^\s")
         };
-        
     }
 }
