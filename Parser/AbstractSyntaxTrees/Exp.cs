@@ -1,0 +1,99 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace Parser.AbstractSyntaxTrees
+{
+    public enum ArithOperationType
+    {
+        PLUS,
+        MINUS,
+        TIMES,
+        DIVIDE,
+        MODULO
+    }
+
+    public abstract class Exp { }
+
+    public class Call : Exp
+    {
+        public string S { get; set; }
+        public List<Exp> Args { get; set; }
+
+        public Call(string s, List<Exp> args)
+        {
+            this.S = s;
+            this.Args = args;
+        }
+    }
+
+    public class If : Exp
+    {
+        public Bexp Cond { get; set; }
+        public Exp E1 { get; set; }
+        public Exp E2 { get; set; }
+
+        public If(Bexp cond, Exp e1, Exp e2)
+        {
+            this.Cond = cond;
+            this.E1 = e1;
+            this.E2 = e2;
+        }
+    }
+
+    public class Var : Exp
+    {
+        public string S { get; set; }
+
+        public Var(string s)
+        {
+            S = s;
+        }
+    }
+
+    public class Num : Exp
+    {
+        public int I { get; set; }
+
+        public Num(int i)
+        {
+            I = i;
+        }
+    }
+
+    public class FNum : Exp
+    {
+        public float I { get; set; }
+
+        public FNum(float i)
+        {
+            I = i;
+        }
+    }
+
+    public class ArithmeticOperation : Exp
+    {
+        public ArithOperationType O { get; set; }
+        public Exp A1 { get; set; }
+        public Exp A2 { get; set; }
+
+        public ArithmeticOperation(ArithOperationType o, Exp a1, Exp a2)
+        {
+            O = o;
+            A1 = a1;
+            A2 = a2;
+        }
+    }
+
+    public class Sequence : Exp
+    {
+        public Exp E1 { get; set; }
+        public Exp E2 { get; set; }
+
+        public Sequence(Exp e1, Exp e2)
+        {
+            E1 = e1;
+            E2 = e2;
+        }
+    }
+
+}
