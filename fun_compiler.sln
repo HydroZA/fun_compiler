@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lexer", "Lexer\Lexer.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parser", "Parser\Parser.csproj", "{A1B4F2BF-B071-4C72-8054-1F764057CA5B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{643467B4-2DD4-4954-BE92-701114EA5F0F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{A1B4F2BF-B071-4C72-8054-1F764057CA5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1B4F2BF-B071-4C72-8054-1F764057CA5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1B4F2BF-B071-4C72-8054-1F764057CA5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{643467B4-2DD4-4954-BE92-701114EA5F0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{643467B4-2DD4-4954-BE92-701114EA5F0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{643467B4-2DD4-4954-BE92-701114EA5F0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{643467B4-2DD4-4954-BE92-701114EA5F0F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
