@@ -8,7 +8,7 @@ namespace Lexer
         KEYWORD,
         ASSIGN_OP,
         TYPE,
-     //   CALL,
+        CALL,
         GLOBAL_IDENTIFIER,
         LOCAL_IDENTIFIER,
         ARITH_OP,
@@ -44,7 +44,7 @@ namespace Lexer
 
         public TokenMatch Match(string inputString)
         {
-            var match = _regex.Match(inputString);
+            Match match = _regex.Match(inputString);
             if (match.Success)
             {
                 string remainingText = string.Empty;

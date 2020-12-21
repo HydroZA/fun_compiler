@@ -17,6 +17,7 @@ namespace fun_compiler
             bool interpret = false, assemble = false;
             string input = "", outpath = "", filename = "";
             Lexer.Lexer lexer = new Lexer.Lexer(FunLexingRules.rules);
+            Parser.Parser parser = new Parser.Parser();
 
             if (args.Length == 0)
             {
@@ -86,6 +87,9 @@ namespace fun_compiler
 
             Console.WriteLine("Lexing...");
             var lexout = lexer.Lex(input);
+
+            Console.WriteLine("Parsing...");
+            var parseout = parser.Parse(lexout);
 
             Console.WriteLine("Done!");
         }

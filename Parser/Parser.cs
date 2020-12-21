@@ -13,106 +13,202 @@ namespace Parser
         {
         }
 
-        public Exp Parse(List<(TokenType, string)> t)
+        public List<Decl> Parse(List<(TokenType, string)> t)
         {
             t.Reverse();
             tokens = new Stack<(TokenType, string)>(t);
-            return ExpParser();
+
+            var parseOut = new List<Decl>();
+            while (tokens.Count != 0)
+            {
+                if (tokens.Peek().Item1 == TokenType.SEMICOLON)
+                    tokens.Pop();
+                parseOut.Add(DeclParser());
+            }
+                
+            return parseOut;
         }
 
-        private Exp ExpParser()
+        private Decl DeclParser()
         {
-            Exp x;
-          /*  try
+            Decl x;
+            try
             {
-                x = CallParser();
+                x = DefParser();
             }
             catch (NoMatchException)
-            {*/
+            {
                 try
                 {
-                     x = ArithmeticParser();
+                    x = ConstantParser();
                 }
-                catch (NoMatchException)
-                { 
+                catch(NoMatchException)
+                {
                     try
                     {
-                        x = IdentifierParser();
+                        x = MainParser();
+                    }
+                    catch (NoMatchException)
+                    {
+                        throw new Exception("Unable to Parse");
+                    }
+                }
+            }
+            return x;
+        }
+
+
+        private Exp Exp()
+        {
+            Exp x;
+            try
+            {
+                x = CallParser();
+                
+            }
+            catch (NoMatchException)
+            { 
+                try
+                {
+                    x = ArithmeticParser();
+                }
+                catch (NoMatchException)
+                {
+                    try
+                    {
+                        x = IfParser();
                     }
                     catch (NoMatchException)
                     {
                         try
                         {
-                            x = IfParser();
+                            x = NumberParser();
                         }
                         catch (NoMatchException)
                         {
                             try
                             {
-                                x = NumberParser();
+                                x = IdentifierParser();
                             }
                             catch (NoMatchException)
                             {
-                                try
-                                {
-                                   x = SequenceParser();
-                                }
-                                catch (NoMatchException)
-                                {
-                                    throw new Exception("Unable to Parse");
-                                }
+                                throw new Exception("Unable to Parse");
                             }
                         }
                     }
                 }
-            //}
+            }
+            
             return x;
         }
 
-        // REMEMBER TO CALL THIS BEFORE THE IDENTIFIER PARSER
-        private Exp CallParser()
+        private Exp ExpParser()
         {
-            /* I have found it difficult to differentiate between variable
-             * references and function calls, so here I backtrack if I
-             * find out it's not a func call
-             */
-            throw new NotImplementedException();
+            Exp e1 = Exp();
 
-            if (tokens.Peek().Item1 == TokenType.LOCAL_IDENTIFIER)
+            if (tokens.Count == 0)
+                return e1;
+
+
+            // BUG: this pops the semicolon at the end of function definitions
+            if (tokens.Peek().Item1 == TokenType.SEMICOLON)
             {
-                var funcName = tokens.Pop();
-                if (tokens.Peek().Item1 == TokenType.LPAREN)
-                {
-                    tokens.Pop();
-
-                    //read args
-
-                }
-                else
-                {
-                    // not a function call, backtrack
-                    tokens.Push(funcName);
-                    throw new NoMatchException();
-                }
+                tokens.Pop();
+                return new Sequence(e1, ExpParser());
+            }
+            else
+            {
+                return e1;
             }
         }
 
-        // Parser for argument lists
-        private List<Exp> ListParser()
+        // Here we need to backtrack in the event we find out it's not a function call
+        // but rather an identifier.
+        private Exp CallParser()
         {
-            /* Args can be:
-             *  variables
-             *  integer constants
-             *  float constants
-             *  nothing
-             */
-            throw new NotImplementedException();
+            if (tokens.Peek().Item1 == TokenType.LOCAL_IDENTIFIER)
+            {
+                var temp = tokens.Pop();
 
+                // backtrack if it's not a function call
+                if (tokens.Peek().Item1 != TokenType.LPAREN)
+                {
+                    tokens.Push(temp);
+                    throw new NoMatchException();
+                }
+
+
+                var funcName = temp.Item2;
+
+                // pop lparen
+                tokens.Pop();
+
+                //read args
+                List<Exp> args = CallArgListParser();
+
+                //pop rparen
+                tokens.Pop();
+
+                return new Call(funcName, args);
+            }
+            else
+            {
+                throw new NoMatchException();
+            }
+        }
+
+        // Parser for argument lists in the declaration of a function
+        //returns a tuple of form (argName, argType)
+        private List<(string, string)> DefArgListParser()
+        {
+            var outp = new List<(string, string)>();
+
+            if (tokens.Peek().Item1 == TokenType.LPAREN)
+                tokens.Pop();
+            else
+                throw new Exception("Invalid argument list");
+
+            while (tokens.Peek().Item1 != TokenType.RPAREN)
+            {
+                string argName = tokens.Pop().Item2;
+
+                //pop ':'
+                tokens.Pop();
+
+                string argType = tokens.Pop().Item2;
+
+                outp.Add((argName, argType));
+
+                if (tokens.Peek().Item1 == TokenType.ARG_SEPERATOR)
+                    tokens.Pop();
+            }
+
+            //pop ')'
+            tokens.Pop();
+
+            return outp;
+            
+        }
+
+        // parser for argument lists when calling a function
+        private List<Exp> CallArgListParser()
+        {
+            var outp = new List<Exp>();
+
+            // return if the function is called with no args
+            while (tokens.Peek().Item1 != TokenType.RPAREN)
+            {
+                outp.Add(ExpParser());
+
+                if (tokens.Peek().Item1 == TokenType.ARG_SEPERATOR)
+                    tokens.Pop();
+            }
+            return outp;                
         }
 
         private Exp IdentifierParser()
         {
-            if (tokens.Peek().Item1 == TokenType.LOCAL_IDENTIFIER)
+            if (tokens.Peek().Item1 == TokenType.LOCAL_IDENTIFIER || tokens.Peek().Item1 == TokenType.GLOBAL_IDENTIFIER)
             {
                 return new Var(tokens.Pop().Item2);
             }
@@ -171,28 +267,45 @@ namespace Parser
                 // pop 'then'
                 tokens.Pop();
 
+                Exp trueBranch;
+
                 // pop optional curly brackets
                 if (tokens.Peek().Item1 == TokenType.LPAREN)
+                {
                     tokens.Pop();
 
-                Exp trueBranch = ExpParser();
+                    trueBranch = ExpParser();
 
-                // pop optional curly brackets
-                if (tokens.Peek().Item1 == TokenType.RPAREN)
-                    tokens.Pop();
+                    // pop optional curly brackets
+                    if (tokens.Peek().Item1 == TokenType.RPAREN)
+                        tokens.Pop();
+                }
+                else
+                {
+                    trueBranch = ExpParser();
+                }
+                
 
                 // pop 'else'
                 tokens.Pop();
 
+                Exp elseBranch;
                 // pop optional curly brackets
                 if (tokens.Peek().Item1 == TokenType.LPAREN)
+                {
                     tokens.Pop();
 
-                Exp elseBranch = ExpParser();
+                    elseBranch = ExpParser();
 
-                // pop optional curly brackets
-                if (tokens.Peek().Item1 == TokenType.RPAREN)
-                    tokens.Pop();
+                    // pop optional curly brackets
+                    if (tokens.Peek().Item1 == TokenType.RPAREN)
+                        tokens.Pop();
+                }
+                else
+                {
+                    elseBranch = ExpParser();
+                }
+
 
                 return new If(bexp, trueBranch, elseBranch);
             }
@@ -388,7 +501,7 @@ namespace Parser
                 var y = Te();
                 return new ArithmeticOperation(op, x, y);
             }
-            catch (NoMatchException)
+            catch (Exception)
             {
                 return x;
             }
@@ -405,26 +518,13 @@ namespace Parser
 
                 return new ArithmeticOperation(op, x, y);
             }
-            catch (NoMatchException)
+            catch (Exception)
             {
                 return x;
             }
         }
 
-        private Exp SequenceParser()
-        {
-            Exp e1 = ExpParser();
 
-            if (tokens.Peek().Item1 == TokenType.SEMICOLON)
-            {
-                tokens.Pop();
-                return new Sequence(e1, SequenceParser());
-            }
-            else
-            {
-                return e1;
-            }
-        }
 
 
         //Decl parsers
@@ -489,16 +589,52 @@ namespace Parser
         }
         private Decl DefParser()
         {
-            throw new NotImplementedException();
+            if (tokens.Peek().Item2 == "def")
+            {
+                tokens.Pop();
+
+                string funcName = tokens.Pop().Item2;
+
+                var args = DefArgListParser();
+
+                //pop ':'
+                tokens.Pop();
+
+                string returnType = tokens.Pop().Item2;
+
+                //pop '='
+                tokens.Pop();
+
+                // pop '{'
+                tokens.Pop();
+
+                Exp body = ExpParser();
+
+                //pop '}'
+                tokens.Pop();
+
+                return new Def(funcName, args, returnType, body);
+            }
+            else
+            {
+                throw new NoMatchException();
+            }
         }
 
         private Decl MainParser()
         {
-            throw new NotImplementedException();
+            Exp bodyMain;
+            try
+            {
+                bodyMain = ExpParser();
+            }
+            catch (NoMatchException)
+            {
+                throw;
+            }
+
+            return new Main(bodyMain);
         }
-
-
-
         
     }
 }
