@@ -2,6 +2,7 @@
 using Lexer;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 
 namespace fun_compiler
 {
