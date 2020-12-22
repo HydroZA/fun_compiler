@@ -1,10 +1,15 @@
 ﻿using System;
 namespace CodeGen
 {
+    public enum VarType
+    {
+        INT,
+        DOUBLE
+    }
+
     public class CodeGenerator
     {
-        private const string PRELUDE = @"
-declare i32 @printf(i8*, ...)
+        private const string PRELUDE = @"declare i32 @printf(i8*, ...)
 
 @.str_nl = private constant [2 x i8] c""\0A\00""
 @.str_star = private constant[2 x i8] c""*\00""
@@ -14,9 +19,9 @@ define void @new_line() #0 {
   %t0 = getelementptr[2 x i8], [2 x i8]* @.str_nl, i32 0, i32 0
   %1 = call i32(i8*, ...) @printf(i8* %t0)
   ret void
-    }
+}
 
-    define void @print_star() #0 {
+define void @print_star() #0 {
   %t0 = getelementptr[2 x i8], [2 x i8]* @.str_star, i32 0, i32 0
   %1 = call i32(i8*, ...) @printf(i8* %t0)
   ret void
