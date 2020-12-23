@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
+using ObjectsComparer;
 
 namespace Lexer
 {
@@ -45,7 +43,7 @@ namespace Lexer
             SEQ s => $"SEQ({PrintPretty(s.r1)}, {PrintPretty(s.r2)})",
             STAR s => $"STAR({PrintPretty(s.r)})",
             PLUS p => $"PLUS({PrintPretty(p.r)})",
-            RANGE ra => $"RANGE({ra.s})",
+            RANGE ra => $"RANGE({ra.s.ToListString()})",
             BETWEEN b => $"BETWEEN({PrintPretty(b.r)}, {b.n}, {b.m})",
             NTIMES n => $"NTIMES({PrintPretty(n.r)}, {n.n})",
             OPTIONAL o => $"OPTIONAL({PrintPretty(o.r)})",
@@ -53,7 +51,8 @@ namespace Lexer
             FROM f => $"FROM({PrintPretty(f.r)}, {f.n})",
             NOT n => $"NOT({PrintPretty(n.r)})",
             ALL => "ALL()",
-            RECD rc => $"RECD({PrintPretty(rc.r)})"
+            RECD rc => $"RECD({PrintPretty(rc.r)})",
+            _ => throw new Exception()
         };
     }
     public sealed class ZERO : Rexp
