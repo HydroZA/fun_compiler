@@ -3,13 +3,19 @@ using System.Collections.Generic;
 
 namespace Parser.AbstractSyntaxTrees
 {
-    public enum ArithOperationType
+    public enum OperationType
     {
         PLUS,
         MINUS,
         TIMES,
         DIVIDE,
-        MODULO
+        MODULO,
+        LESS_THAN,
+        GREATER_THAN,
+        LESS_THAN_OR_EQUAL,
+        GREATER_THAN_OR_EQUAL,
+        NOT_EQUAL,
+        EQUAL
     }
 
     public abstract class Exp { }
@@ -72,11 +78,11 @@ namespace Parser.AbstractSyntaxTrees
 
     public class ArithmeticOperation : Exp
     {
-        public ArithOperationType O { get; set; }
+        public OperationType O { get; set; }
         public Exp A1 { get; set; }
         public Exp A2 { get; set; }
 
-        public ArithmeticOperation(ArithOperationType o, Exp a1, Exp a2)
+        public ArithmeticOperation(OperationType o, Exp a1, Exp a2)
         {
             O = o;
             A1 = a1;

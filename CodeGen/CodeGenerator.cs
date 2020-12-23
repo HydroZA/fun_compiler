@@ -1,10 +1,15 @@
 ﻿using System;
+using System.Reflection;
+using Lexer;
+using Parser.AbstractSyntaxTrees;
+
 namespace CodeGen
 {
     public enum VarType
     {
         INT,
-        DOUBLE
+        DOUBLE,
+        UNDEF
     }
 
     public class CodeGenerator
@@ -47,8 +52,78 @@ define void @print_int(i32 %x)
 }
 ; END OF PRELUDE";
 
+        private static int labelCount;
+
         public CodeGenerator()
         {
+            labelCount = 0;
+
+        }
+
+        // Creates and stores unique labels
+        private struct Label
+        {
+            public readonly string l;
+
+            public Label(string s)
+            {
+                l = s + labelCount++;
+            }
+        }
+
+        private string CompileIntArithOperation(OperationType op) => op switch
+        {
+            OperationType.PLUS => "add i32 ",
+            OperationType.MINUS => "sub i32 ",
+            OperationType.TIMES => "mul i32 ",
+            OperationType.DIVIDE => "sdiv i32 ",
+            OperationType.MODULO => "srem i32 ",
+        };
+
+        private string CompileFloatArithOperation(OperationType op) => op switch
+        {
+            OperationType.PLUS => "fadd double ",
+            OperationType.MINUS => "fsub double ",
+            OperationType.TIMES => "fmul double ",
+            OperationType.DIVIDE => "fdiv double ",
+            OperationType.MODULO => "frem double ",
+        };
+
+        private string CompileIntBoolOperation(OperationType op) => op switch
+        {
+            OperationType.EQUAL => "icmp eq i32 ",
+            OperationType.GREATER_THAN => "icmp sgt i32 ",
+            OperationType.GREATER_THAN_OR_EQUAL => "icmp sge i32 ",
+            OperationType.LESS_THAN => "icmp slt i32",
+            OperationType.LESS_THAN_OR_EQUAL => "icmp sle i32 "
+        };
+
+        private string CompileFloatBoolOperation(OperationType op) => op switch
+        {
+            OperationType.EQUAL => "fcmp oeq double ",
+            OperationType.GREATER_THAN => "fcmp ogt double ",
+            OperationType.GREATER_THAN_OR_EQUAL => "fcmp oge double ",
+            OperationType.LESS_THAN => "fcmp olt double ",
+            OperationType.LESS_THAN_OR_EQUAL => "fcmp ole double "
+        };
+
+        private KExp CPS(Exp e, Func<KVal, KExp> k)
+        {
+            switch (e)
+            {
+                case Var v:
+                    return k(new KVar(v.S));
+                case Num n:
+                    return k(new KNum(n.I));
+                case ArithmeticOperation aop:
+                    var label = new Label("tmp");
+                    return CPS(aop.A1, x =>
+                            CPS(aop.A2, y =>
+                                new KLet(label.l, new Kop(aop.O, x, y), k(new KVar(label.l)))));
+                case If i:
+                    Label l = new Label("tmp");
+                    return CPS()
+            }
         }
     }
 }
