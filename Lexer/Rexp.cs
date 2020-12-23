@@ -28,7 +28,33 @@ namespace Lexer
             return r;
         }
         public static implicit operator Rexp (string s) => StringToRexp(s);
-        
+
+        public override bool Equals(object r) => ToString() == r.ToString();
+
+        public override string ToString()
+        {
+            return PrintPretty(this);
+        }
+
+        public static string PrintPretty(Rexp r) => r switch
+        {
+            ZERO => "ZERO()",
+            ONE => "ONE()",
+            CHAR c => $"CHAR({c.c})",
+            ALT a => $"ALT({PrintPretty(a.r1)}, {PrintPretty(a.r2)})",
+            SEQ s => $"SEQ({PrintPretty(s.r1)}, {PrintPretty(s.r2)})",
+            STAR s => $"STAR({PrintPretty(s.r)})",
+            PLUS p => $"PLUS({PrintPretty(p.r)})",
+            RANGE ra => $"RANGE({ra.s})",
+            BETWEEN b => $"BETWEEN({PrintPretty(b.r)}, {b.n}, {b.m})",
+            NTIMES n => $"NTIMES({PrintPretty(n.r)}, {n.n})",
+            OPTIONAL o => $"OPTIONAL({PrintPretty(o.r)})",
+            UPTO u => $"UPTO({PrintPretty(u.r)}, {u.m})",
+            FROM f => $"FROM({PrintPretty(f.r)}, {f.n})",
+            NOT n => $"NOT({PrintPretty(n.r)})",
+            ALL => "ALL()",
+            RECD rc => $"RECD({PrintPretty(rc.r)})"
+        };
     }
     public sealed class ZERO : Rexp
     {

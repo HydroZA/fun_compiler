@@ -5,10 +5,10 @@ using System.Text.RegularExpressions;
 
 namespace Lexer
 {
-    public class SulzmannLexer
+    public class Lexer
     {
         private readonly Rexp rules;
-        public SulzmannLexer(Rexp rules)
+        public Lexer(Rexp rules)
         {
             this.rules = rules;
         }
@@ -213,7 +213,7 @@ namespace Lexer
                         case (_, ZERO):
                                 return (r1s, F_LEFT(f1s));
                         case (_, _):
-                            if (r1s == r2s)
+                            if (r1s.Equals(r2s))
                                 return (r1s, F_RIGHT(f2s));
                             else
                                 return (new ALT(r1s, r2s), F_ALT(f1s, f2s));

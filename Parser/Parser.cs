@@ -315,7 +315,7 @@ namespace Parser
             }
         }
 
-        private BoolOperationType DefineBooleanOperator((TokenType, string) token)
+        private OperationType DefineBooleanOperator((TokenType, string) token)
         {
             if (token.Item1 != TokenType.BOOL_OP)
             {
@@ -323,12 +323,12 @@ namespace Parser
             }
             return token.Item2 switch
             {
-                "==" => BoolOperationType.EQUAL,
-                "!=" => BoolOperationType.NOT_EQUAL,
-                "<" => BoolOperationType.LESS_THAN,
-                ">" => BoolOperationType.GREATER_THAN,
-                "<=" => BoolOperationType.LESS_THAN_OR_EQUAL,
-                ">=" => BoolOperationType.GREATER_THAN_OR_EQUAL,
+                "==" => OperationType.EQUAL,
+                "!=" => OperationType.NOT_EQUAL,
+                "<" => OperationType.LESS_THAN,
+                ">" => OperationType.GREATER_THAN,
+                "<=" => OperationType.LESS_THAN_OR_EQUAL,
+                ">=" => OperationType.GREATER_THAN_OR_EQUAL,
                 _ => throw new NoMatchException("Token was not a valid Boolean operator")
             };
         }
@@ -406,7 +406,7 @@ namespace Parser
         // Arithmetic Parsers
         // ================
 
-        private ArithOperationType DefineAEArithmeticOperator((TokenType, string) token)
+        private OperationType DefineAEArithmeticOperator((TokenType, string) token)
         {
             if (token.Item1 != TokenType.ARITH_OP)
             {
@@ -414,14 +414,14 @@ namespace Parser
             }
             return token.Item2 switch
             {
-                "+" => ArithOperationType.PLUS,
-                "-" => ArithOperationType.MINUS,
+                "+" => OperationType.PLUS,
+                "-" => OperationType.MINUS,
                 _ => throw new NoMatchException("Token was not a valid arithmetic operator")
             };
         }
 
 
-        private ArithOperationType DefineTeArithmeticOperator((TokenType, string) token)
+        private OperationType DefineTeArithmeticOperator((TokenType, string) token)
         {
             if (token.Item1 != TokenType.ARITH_OP)
             {
@@ -429,9 +429,9 @@ namespace Parser
             }
             return token.Item2 switch
             {
-                "*" => ArithOperationType.TIMES,
-                "/" => ArithOperationType.DIVIDE,
-                "%" => ArithOperationType.MODULO,
+                "*" => OperationType.TIMES,
+                "/" => OperationType.DIVIDE,
+                "%" => OperationType.MODULO,
                 _ => throw new NoMatchException("Token was not a valid arithmetic operator")
             };
         }
@@ -525,9 +525,6 @@ namespace Parser
             }
         }
 
-
-
-
         //Decl parsers
         private Decl ConstantParser()
         {
@@ -588,6 +585,7 @@ namespace Parser
                 throw new NoMatchException();
             }
         }
+
         private Decl DefParser()
         {
             if (tokens.Peek().Item2 == "def")

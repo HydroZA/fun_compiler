@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using Parser.AbstractSyntaxTrees;
 
 namespace CodeGen
 {
-    public abstract class KVal { }
+    public interface KVal { }
 
     public class KVar : KVal
     {
@@ -29,11 +30,11 @@ namespace CodeGen
 
     public class Kop : KVal
     {
-        public string Op { get; set; }
+        public OperationType Op { get; set; }
         public KVal V1 { get; set; }
         public KVal V2 { get; set; }
 
-        public Kop(string op, KVal v1, KVal v2)
+        public Kop(OperationType op, KVal v1, KVal v2)
         {
             Op = op;
             V1 = v1;
