@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Parser.AbstractSyntaxTrees;
+
 namespace CodeGen
 {
     public abstract class KVal { }
@@ -24,6 +25,16 @@ namespace CodeGen
         public KNum(int i)
         {
             I = i;
+        }
+    }
+
+    public class KFNum : KVal
+    {
+        public float F { get; set; }
+
+        public KFNum(float f)
+        {
+            this.F = f;
         }
     }
 

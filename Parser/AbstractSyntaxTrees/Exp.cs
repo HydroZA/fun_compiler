@@ -34,11 +34,11 @@ namespace Parser.AbstractSyntaxTrees
 
     public class If : Exp
     {
-        public Bexp Cond { get; set; }
+        public BooleanOperation Cond { get; set; }
         public Exp E1 { get; set; }
         public Exp E2 { get; set; }
 
-        public If(Bexp cond, Exp e1, Exp e2)
+        public If(BooleanOperation cond, Exp e1, Exp e2)
         {
             this.Cond = cond;
             this.E1 = e1;
@@ -49,6 +49,7 @@ namespace Parser.AbstractSyntaxTrees
     public class Var : Exp
     {
         public string S { get; set; }
+
 
         public Var(string s)
         {

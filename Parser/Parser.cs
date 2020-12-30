@@ -262,8 +262,8 @@ namespace Parser
             {
                 tokens.Pop();
 
-                var bexp = BooleanParser();
-
+                BooleanOperation bexp = (BooleanOperation)BooleanParser();
+                
                 // pop 'then'
                 tokens.Pop();
 
@@ -389,7 +389,7 @@ namespace Parser
                 tokens.Pop();
 
                 // Get the boolean expression
-                var bexp = BooleanParser();
+                BooleanOperation bexp = (BooleanOperation) BooleanParser();
 
                 // Pop the close bracket
                 tokens.Pop();

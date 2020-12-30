@@ -58,5 +58,9 @@ namespace CodeGen
         {
             Val = v;
         }
+        public KReturn()
+        {
+
+        }
     }
 }

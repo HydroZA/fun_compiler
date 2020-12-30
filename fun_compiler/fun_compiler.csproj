@@ -11,5 +11,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Lexer\Lexer.csproj" />
     <ProjectReference Include="..\Parser\Parser.csproj" />
+    <ProjectReference Include="..\CodeGen\CodeGen.csproj" />
   </ItemGroup>
 </Project>

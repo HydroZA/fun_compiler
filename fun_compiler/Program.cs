@@ -1,5 +1,7 @@
 ﻿using System;
 using Lexer;
+using CodeGen;
+using Parser.AbstractSyntaxTrees;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Text.Json;
@@ -19,6 +21,7 @@ namespace fun_compiler
             string input = "", outpath = "", filename = "";
             Lexer.Lexer lexer = new Lexer.Lexer(FunLexingRules.rules);
             Parser.Parser parser = new Parser.Parser();
+            CodeGenerator gen = new CodeGenerator();
 
             if (args.Length == 0)
             {
@@ -86,13 +89,20 @@ namespace fun_compiler
             if (outpath == "")
                 outpath = ".";
 
-            Console.WriteLine("Lexing...");
-            var lexout = lexer.Lex(input);
+            /*    Console.WriteLine("Lexing...");
+                var lexout = lexer.Lex(input);
 
-            Console.WriteLine("Parsing...");
-            var parseout = parser.Parse(lexout);
+                Console.WriteLine("Parsing...");
+                var parseout = parser.Parse(lexout);
 
-            Console.WriteLine("Done!");
+                Console.WriteLine("Done!");
+            */
+
+            // var a = gen.CPSi(new ArithmeticOperation(OperationType.PLUS, new ArithmeticOperation(OperationType.TIMES, new Var("a"), new Num(3)), new Num(4)));
+
+            var a = gen.CPSi(new If(new BooleanOperation(OperationType.EQUAL, new Var("k"), new Num(23)), new ArithmeticOperation(OperationType.TIMES, new Var("a"), new Num(3)), new ArithmeticOperation(OperationType.TIMES, new Var("b"), new Num(4))));
+
+            Console.WriteLine("yo");
         }
     }
 }
