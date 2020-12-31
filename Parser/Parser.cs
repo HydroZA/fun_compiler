@@ -262,7 +262,7 @@ namespace Parser
             {
                 tokens.Pop();
 
-                BooleanOperation bexp = (BooleanOperation)BooleanParser();
+                Operation bexp = (Operation)BooleanParser();
                 
                 // pop 'then'
                 tokens.Pop();
@@ -333,9 +333,9 @@ namespace Parser
             };
         }
 
-        private Bexp BooleanParser()
+        private Operation BooleanParser()
         {
-            Bexp bexp;
+            Operation bexp;
             try
             {
                 bexp = BoolBrackets();
@@ -357,7 +357,7 @@ namespace Parser
             return bexp;
         }
         // For simple boolean expressions such as "x < y"
-        private Bexp SimpleBool()
+        private Operation SimpleBool()
         {
             Exp x;
             try
@@ -376,12 +376,12 @@ namespace Parser
 
             var y = ExpParser();
 
-            return new BooleanOperation(op, x, y);
+            return new Operation(op, x, y);
         }
 
 
         // For boolean expressions in brackets or Compound Boolean Expressions joined with AND or OR. Eg (x < y) && (z == 4)
-        private Bexp BoolBrackets()
+        private Operation BoolBrackets()
         {
             if (tokens.Peek().Item1 == TokenType.LPAREN)
             {
@@ -389,7 +389,7 @@ namespace Parser
                 tokens.Pop();
 
                 // Get the boolean expression
-                BooleanOperation bexp = (BooleanOperation) BooleanParser();
+                Operation bexp = BooleanParser();
 
                 // Pop the close bracket
                 tokens.Pop();
@@ -499,7 +499,7 @@ namespace Parser
                 tokens.Pop();
 
                 var y = Te();
-                return new ArithmeticOperation(op, x, y);
+                return new Operation(op, x, y);
             }
             catch (Exception)
             {
@@ -517,7 +517,7 @@ namespace Parser
                 tokens.Pop();
                 var y = ArithmeticParser();
 
-                return new ArithmeticOperation(op, x, y);
+                return new Operation(op, x, y);
             }
             catch (Exception)
             {
@@ -601,7 +601,8 @@ namespace Parser
                 //pop ':'
                 tokens.Pop();
 
-                string returnType = tokens.Pop().Item2;
+                string strType = tokens.Pop().Item2;
+                var returnType = strType == "Double" ? VarType.DOUBLE : VarType.INT;
 
                 //pop '='
                 tokens.Pop();

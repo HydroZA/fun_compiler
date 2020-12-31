@@ -9,4 +9,7 @@
     <ProjectReference Include="..\Parser\Parser.csproj" />
     <ProjectReference Include="..\Lexer\Lexer.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="LLVMSharp" Version="5.0.0" />
+  </ItemGroup>
 </Project>

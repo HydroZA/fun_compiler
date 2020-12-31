@@ -3,16 +3,22 @@ using System.Collections.Generic;
 
 namespace Parser.AbstractSyntaxTrees
 {
+    public enum VarType
+    {
+        INT,
+        DOUBLE,
+        UNDEF
+    }
     public abstract class Decl { }
 
     public class Def : Decl
     {
         public string Name { get; set; }
         public List<(string, string)> Args { get; set; }
-        public string Type { get; set; }
+        public VarType Type { get; set; }
         public Exp body { get; set; }
 
-        public Def(string name, List<(string, string)> args, string type, Exp body)
+        public Def(string name, List<(string, string)> args, VarType type, Exp body)
         {
             Name = name;
             Args = args;

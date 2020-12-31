@@ -18,27 +18,30 @@ namespace Parser.AbstractSyntaxTrees
         EQUAL
     }
 
-    public abstract class Exp { }
+    public abstract class Exp
+    {
+
+    }
 
     public class Call : Exp
     {
         public string S { get; set; }
-        public List<Exp> Args { get; set; }
+        public List<Exp> Arguments { get; set; }
 
         public Call(string s, List<Exp> args)
         {
             this.S = s;
-            this.Args = args;
+            this.Arguments = args;
         }
     }
 
     public class If : Exp
     {
-        public BooleanOperation Cond { get; set; }
+        public Operation Cond { get; set; }
         public Exp E1 { get; set; }
         public Exp E2 { get; set; }
 
-        public If(BooleanOperation cond, Exp e1, Exp e2)
+        public If(Operation cond, Exp e1, Exp e2)
         {
             this.Cond = cond;
             this.E1 = e1;
@@ -77,13 +80,13 @@ namespace Parser.AbstractSyntaxTrees
         }
     }
 
-    public class ArithmeticOperation : Exp
+    public class Operation : Exp
     {
         public OperationType O { get; set; }
         public Exp A1 { get; set; }
         public Exp A2 { get; set; }
 
-        public ArithmeticOperation(OperationType o, Exp a1, Exp a2)
+        public Operation(OperationType o, Exp a1, Exp a2)
         {
             O = o;
             A1 = a1;
