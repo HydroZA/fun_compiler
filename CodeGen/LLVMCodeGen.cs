@@ -23,6 +23,8 @@ namespace CodeGen
 
         public LLVMCodeGen()
         {
+            module = LLVM.ModuleCreateWithName("codegen");
+            builder = LLVM.CreateBuilder();
             namedValues = new Dictionary<string, LLVMValueRef>();
             typeEnv = new Dictionary<string, VarType>();
         }
@@ -41,7 +43,7 @@ namespace CodeGen
             Var v => namedValues[v.S],
             Call c => CompileCall(c),
             If f => CompileIf(f),
-            Operation => throw new NotImplementedException(),
+            Operation o => CompileFloatOperation(o),
             Sequence => throw new NotImplementedException()
         };
 
@@ -102,7 +104,7 @@ namespace CodeGen
                 OperationType.MINUS => LLVM.BuildFSub(this.builder, l, r, "subtmp"),
                 OperationType.TIMES => LLVM.BuildFMul(this.builder, l, r, "multmp"),
                 OperationType.LESS_THAN => LLVM.BuildUIToFP(this.builder, LLVM.BuildFCmp(this.builder, LLVMRealPredicate.LLVMRealULT, l, r, "cmptmp"), LLVM.DoubleType(), "booltmp"),// Convert bool 0/1 to double 0.0 or 1.0
-                OperationType.DIVIDE => throw new NotImplementedException(),
+                OperationType.DIVIDE => LV
                 OperationType.MODULO => throw new NotImplementedException(),
                 OperationType.GREATER_THAN => throw new NotImplementedException(),
                 OperationType.LESS_THAN_OR_EQUAL => throw new NotImplementedException(),
@@ -165,7 +167,7 @@ namespace CodeGen
         private LLVMValueRef CompileMainDef(Main m)
         {
             var func = LLVM.GetNamedFunction(module, "main");
-            func = LLVM.AddFunction(module, "main", LLVM.Int32Type());
+            func = LLVM.AddFunction(module, "main", LLVM.FunctionType(LLVM.Int32Type(), new LLVMTypeRef[0], false));
             LLVM.SetLinkage(func, LLVMLinkage.LLVMExternalLinkage);
 
             return func;
