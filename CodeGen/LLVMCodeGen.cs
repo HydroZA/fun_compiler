@@ -21,9 +21,9 @@ namespace CodeGen
         // maintains a map of what type each variable, function, operation, etc takes
         private readonly Dictionary<string, VarType> typeEnv;
 
-        public LLVMCodeGen()
+        public LLVMCodeGen(string filename)
         {
-            module = LLVM.ModuleCreateWithName("codegen");
+            module = LLVM.ModuleCreateWithName(filename);
             builder = LLVM.CreateBuilder();
             namedValues = new Dictionary<string, LLVMValueRef>();
             typeEnv = new Dictionary<string, VarType>();
@@ -44,7 +44,8 @@ namespace CodeGen
             Call c => CompileCall(c),
             If f => CompileIf(f),
             Operation o => CompileFloatOperation(o),
-            Sequence => throw new NotImplementedException()
+            Sequence => throw new NotImplementedException(),
+            _ => throw new NotImplementedException()
         };
 
 
@@ -103,9 +104,10 @@ namespace CodeGen
                 OperationType.PLUS => LLVM.BuildFAdd(this.builder, l, r, "addtmp"),
                 OperationType.MINUS => LLVM.BuildFSub(this.builder, l, r, "subtmp"),
                 OperationType.TIMES => LLVM.BuildFMul(this.builder, l, r, "multmp"),
-                OperationType.LESS_THAN => LLVM.BuildUIToFP(this.builder, LLVM.BuildFCmp(this.builder, LLVMRealPredicate.LLVMRealULT, l, r, "cmptmp"), LLVM.DoubleType(), "booltmp"),// Convert bool 0/1 to double 0.0 or 1.0
-                OperationType.DIVIDE => LV
-                OperationType.MODULO => throw new NotImplementedException(),
+                // should this be LLVM.BuildBrCond(...)?
+                OperationType.LESS_THAN => LLVM.BuildUIToFP(this.builder, LLVM.BuildFCmp(this.builder, LLVMRealPredicate.LLVMRealOLT, l, r, "cmptmp"), LLVM.DoubleType(), "booltmp"),// Convert bool 0/1 to double 0.0 or 1.0
+                OperationType.DIVIDE => LLVM.BuildFDiv(this.builder, l, r, "divtmp"),
+                OperationType.MODULO => LLVM.BuildFRem(this.builder, l, r, "remtmp"),
                 OperationType.GREATER_THAN => throw new NotImplementedException(),
                 OperationType.LESS_THAN_OR_EQUAL => throw new NotImplementedException(),
                 OperationType.GREATER_THAN_OR_EQUAL => throw new NotImplementedException(),
@@ -117,7 +119,24 @@ namespace CodeGen
 
         private LLVMValueRef CompileIntOperation(Operation node)
         {
-            throw new NotImplementedException();
+            LLVMValueRef l = CompileExp(node.A1);
+            LLVMValueRef r = CompileExp(node.A2);
+
+            return node.O switch
+            {
+                OperationType.PLUS => LLVM.BuildAdd(this.builder, l, r, "addtmp"),
+                OperationType.MINUS => LLVM.BuildSub(this.builder, l, r, "subtmp"),
+                OperationType.TIMES => LLVM.BuildMul(this.builder, l, r, "multmp"),
+                OperationType.LESS_THAN => LLVM.BuildICmp(this.builder, LLVMIntPredicate.LLVMIntSLT, l, r, "lttmp"),
+                OperationType.DIVIDE => LLVM.BuildSDiv(this.builder, l, r, "divtmp"),
+                OperationType.MODULO => LLVM.BuildSRem(this.builder, l, r, "remtmp"),
+                OperationType.GREATER_THAN => LLVM.BuildICmp(this.builder, LLVMIntPredicate.LLVMIntSGT, l, r, "gttmp"),
+                OperationType.LESS_THAN_OR_EQUAL => LLVM.BuildICmp(this.builder, LLVMIntPredicate.LLVMIntSLE, l, r, "letmp"),
+                OperationType.GREATER_THAN_OR_EQUAL => LLVM.BuildICmp(this.builder, LLVMIntPredicate.LLVMIntSGE, l, r, "getmp"),
+                OperationType.NOT_EQUAL => LLVM.BuildICmp(this.builder, LLVMIntPredicate.LLVMIntNE, l, r, "netmp"),
+                OperationType.EQUAL => LLVM.BuildICmp(this.builder, LLVMIntPredicate.LLVMIntEQ, l, r, "eqtmp"),
+                _ => throw new Exception("invalid binary operator"),
+            };
         }
 
         private LLVMValueRef CompileFunctionDef(Def d)
@@ -173,6 +192,28 @@ namespace CodeGen
             return func;
         }
 
+        private LLVMValueRef CompileConstantDef(Const c)
+        {
+            LLVM.GetNamedGlobal(module, c.Name);
+            LLVMValueRef con = LLVM.AddGlobal(module, LLVM.Int32Type(), c.Name);
+            LLVM.SetLinkage(con, LLVMLinkage.LLVMExternalLinkage);
+
+            typeEnv.Add(c.Name, VarType.INT);
+
+            return con;
+
+        }
+        private LLVMValueRef CompileConstantDef(FConst c)
+        {
+            LLVM.GetNamedGlobal(module, c.Name);
+            LLVMValueRef con = LLVM.AddGlobal(module, LLVM.DoubleType(), c.Name);
+         //   LLVM.SetLinkage(con, LLVMLinkage.LLVMExternalLinkage);
+
+            typeEnv.Add(c.Name, VarType.DOUBLE);
+
+            return con;
+        }
+
         public LLVMValueRef CompileDecl(Decl d)
         {
             switch (d)
@@ -202,8 +243,12 @@ namespace CodeGen
                     return main;
 
                 case Const c:
-                    //  LLVM.AddGlobal(module, LLVM.ConstInt(LLVM.Int32Type(), (ulong)c.V, false), c.Name);
-                    throw new NotImplementedException();
+                    var con = CompileConstantDef(c);
+                    var val = LLVM.ConstInt(LLVM.Int32Type(), (ulong)c.V, false);
+                    con.SetInitializer(val);
+
+                    return con;
+                    //throw new NotImplementedException();
                 case FConst fc:
                     throw new NotImplementedException();
                 default:

@@ -18,11 +18,10 @@ namespace fun_compiler
 
         static void Main(string[] args)
         {
-            bool interpret = false, assemble = false;
+            bool interpret = false;
             string input = "", outpath = "", filename = "";
             Lexer.Lexer lexer = new Lexer.Lexer(FunLexingRules.rules);
             Parser.Parser parser = new Parser.Parser();
-            LLVMCodeGen gen = new LLVMCodeGen();
 
             if (args.Length == 0)
             {
@@ -54,19 +53,6 @@ namespace fun_compiler
                             }
                             break;
                         }
-                    case "-a":
-                        {
-                            assemble = true;
-
-                            // -r and -i can not be used together
-                            if (interpret)
-                            {
-                                Console.Error.WriteLine("-i and -a cannot be used together");
-                                Console.Error.WriteLine(helpMsg);
-                                Environment.Exit(1);
-                            }
-                            break;
-                        }
                     default:
                         {
                             try
@@ -90,20 +76,19 @@ namespace fun_compiler
             if (outpath == "")
                 outpath = ".";
 
-                Console.WriteLine("Lexing...");
-                var lexout = lexer.Lex(input);
+            Console.WriteLine("Lexing...");
+            var lexout = lexer.Lex(input);
 
-                Console.WriteLine("Parsing...");
-                var parseout = parser.Parse(lexout);
+            Console.WriteLine("Parsing...");
+            var parseout = parser.Parse(lexout);
 
-                Console.WriteLine("Done!");
+            Console.WriteLine("Generating Code...");
+            var ir = new LLVMCodeGen(filename).GenerateCode(parseout);
 
+            //LLVM.DumpModule(ir);
+            LLVM.PrintModuleToFile(ir, $"{outpath}/{filename}.ll", out _);
 
-            //test code gen
-            var ir = gen.GenerateCode(parseout);
-
-            LLVM.DumpModule(ir);
-            Console.WriteLine("yo");
+            Console.WriteLine("Done!");
         }
     }
 }
