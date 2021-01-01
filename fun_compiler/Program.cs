@@ -1,19 +1,56 @@
 ﻿using System;
+using System.IO;
 using Lexer;
 using CodeGen;
-using Parser.AbstractSyntaxTrees;
-using System.IO;
 using System.Text.RegularExpressions;
-using System.Text.Json;
 using LLVMSharp;
+using System.Text;
 
 namespace fun_compiler
 {
     class Program
     {
-        
 
-        private static readonly string helpMsg = @"usage: FunCompiler.exe [args] <file>";
+        private const string PROLOGUE = @"
+declare i32 @printf(i8*, ...)
+
+@.str_nl = private constant [2 x i8] c""\0A\00""
+@.str_star = private constant[2 x i8] c""*\00""
+@.str_space = private constant[2 x i8] c"" \00""
+
+define void @new_line() #0 {
+    %t0 = getelementptr[2 x i8], [2 x i8]* @.str_nl, i32 0, i32 0
+    %1 = call i32(i8*, ...) @printf(i8* %t0)
+    ret void
+}
+
+define void @print_star() #0 {
+    %t0 = getelementptr[2 x i8], [2 x i8]* @.str_star, i32 0, i32 0
+    %t1 = call i32(i8*, ...) @printf(i8* %t0)
+    ret void
+}
+
+define void @print_space() #0 {
+    %t0 = getelementptr[2 x i8], [2 x i8]* @.str_space, i32 0, i32 0
+    %1 = call i32(i8 *, ...) @printf(i8 * % t0)
+    ret void
+}
+
+define void @skip() #0 {
+  ret void
+}
+
+@.str = private constant[4 x i8] c""%d\0A\00""
+
+define void @print_int(i32 %x)
+{
+   %t0 = getelementptr[4 x i8], [4 x i8]* @.str, i32 0, i32 0
+   call i32(i8*, ...) @printf(i8 * % t0, i32 % x)
+   ret void
+}
+; END OF PROLOGUE
+";
+        private const string HELP_MSG = @"usage: FunCompiler.exe [args] <file>";
 
 
         static void Main(string[] args)
@@ -25,7 +62,7 @@ namespace fun_compiler
 
             if (args.Length == 0)
             {
-                Console.Error.WriteLine(helpMsg);
+                Console.Error.WriteLine(HELP_MSG);
                 Environment.Exit(1);
             }
 
@@ -48,7 +85,7 @@ namespace fun_compiler
                             if (interpret)
                             {
                                 Console.Error.WriteLine("-i and -o cannot be used together");
-                                Console.Error.WriteLine(helpMsg);
+                                Console.Error.WriteLine(HELP_MSG);
                                 Environment.Exit(1);
                             }
                             break;
@@ -76,6 +113,8 @@ namespace fun_compiler
             if (outpath == "")
                 outpath = ".";
 
+            string outputFile = $"{outpath}/{filename}.ll";
+
             Console.WriteLine("Lexing...");
             var lexout = lexer.Lex(input);
 
@@ -86,7 +125,14 @@ namespace fun_compiler
             var ir = new LLVMCodeGen(filename).GenerateCode(parseout);
 
             //LLVM.DumpModule(ir);
-            LLVM.PrintModuleToFile(ir, $"{outpath}/{filename}.ll", out _);
+            LLVM.PrintModuleToFile(ir, outputFile, out _);
+
+            // hack to insert the built-in functions
+            /*StringBuilder irCode = new StringBuilder(File.ReadAllText(outputFile));
+            irCode.Insert(0, PROLOGUE);
+            File.WriteAllText(outputFile, irCode.ToString());
+            */
+
 
             Console.WriteLine("Done!");
         }

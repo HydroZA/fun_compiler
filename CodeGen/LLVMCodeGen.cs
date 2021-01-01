@@ -5,6 +5,14 @@ using LLVMSharp;
 
 namespace CodeGen
 {
+
+    /* TODO
+     * - Find out how to prepend built-in functions - DONE
+     * - Compiling If statements crashes when compiling the else branch
+     * - Finish Operation definitions for CompileFloatOperation()
+     * - Implement remaining Exps in CompileExps()
+     */
+
     public class LLVMCodeGen
     {
         // the top-level structure that the LLVM IR uses to contain code
@@ -21,13 +29,120 @@ namespace CodeGen
         // maintains a map of what type each variable, function, operation, etc takes
         private readonly Dictionary<string, VarType> typeEnv;
 
+        private readonly string[] builtIntFunctions;
+
         public LLVMCodeGen(string filename)
         {
             module = LLVM.ModuleCreateWithName(filename);
             builder = LLVM.CreateBuilder();
             namedValues = new Dictionary<string, LLVMValueRef>();
             typeEnv = new Dictionary<string, VarType>();
+            builtIntFunctions = new string[]
+            {
+                "new_line",
+                "print_star",
+                "print_space",
+                "skip",
+                "print_int"
+            };
         }
+
+        private void CreatePrologue()
+        {
+            // Create @printf(i8*, ...)
+            var arg = new LLVMTypeRef[] { LLVM.PointerType(LLVM.Int8Type(), 0) };
+            var printf = LLVM.FunctionType(LLVM.Int32Type(), arg, true);
+            var printfFunc = LLVM.AddFunction(module, "printf", printf);
+
+            // Creat @.str
+            var str = LLVM.ConstString("%d\n", 4, true);
+            var str_glob = LLVM.AddGlobal(module, LLVM.TypeOf(str), "str");
+            LLVM.SetInitializer(str_glob, str);
+            //namedValues["str"] = str_glob;
+            
+
+            // Create @.str_nl
+            var str_nl = LLVM.ConstString("\n", 2, true);
+            var str_nl_glob = LLVM.AddGlobal(module, LLVM.TypeOf(str_nl), "str_nl");
+            LLVM.SetInitializer(str_nl_glob, str_nl);
+
+            // Create @.str_star
+            var str_star = LLVM.ConstString("*", 2, true);
+            var str_star_glob = LLVM.AddGlobal(module, LLVM.TypeOf(str_star), "str_star");
+            LLVM.SetInitializer(str_star_glob, str_star);
+
+            // Create @.str_space
+            var str_space = LLVM.ConstString(" ", 2, true);
+            var str_space_glob = LLVM.AddGlobal(module, LLVM.TypeOf(str_space), "str_space");
+            LLVM.SetInitializer(str_space_glob, str_space);
+
+            // Create @new_line()
+            var new_line = LLVM.GetNamedFunction(module, "new_line");
+            new_line = LLVM.AddFunction(module, "new_line", LLVM.FunctionType(LLVM.VoidType(), Array.Empty<LLVMTypeRef>(), false));
+
+            LLVM.PositionBuilderAtEnd(builder, LLVM.AppendBasicBlock(new_line, "entry"));
+
+            var callee = LLVM.GetNamedFunction(module, "printf");
+            var indicies = new LLVMValueRef[] { LLVM.ConstInt(LLVM.Int32Type(), 0, false), LLVM.ConstInt(LLVM.Int32Type(), 0, false) };
+            var gep = LLVM.BuildGEP(builder, str_nl_glob, indicies, "t");
+            var call = LLVM.BuildCall(builder, callee, new LLVMValueRef[] { gep }, "1");
+
+            LLVM.BuildRetVoid(builder);
+            LLVM.VerifyFunction(new_line, LLVMVerifierFailureAction.LLVMPrintMessageAction);
+
+
+            // Create @print_star()
+            var print_star = LLVM.GetNamedFunction(module, "print_star");
+            print_star = LLVM.AddFunction(module, "print_star", LLVM.FunctionType(LLVM.VoidType(), Array.Empty<LLVMTypeRef>(), false));
+
+            LLVM.PositionBuilderAtEnd(builder, LLVM.AppendBasicBlock(print_star, "entry"));
+
+            callee = LLVM.GetNamedFunction(module, "printf");
+            indicies = new LLVMValueRef[] { LLVM.ConstInt(LLVM.Int32Type(), 0, false), LLVM.ConstInt(LLVM.Int32Type(), 0, false) };
+            gep = LLVM.BuildGEP(builder, str_star_glob, indicies, "t");
+            LLVM.BuildCall(builder, callee, new LLVMValueRef[] { gep }, "1");
+
+            LLVM.BuildRetVoid(builder);
+
+            // Create @print_space()
+            var print_space = LLVM.GetNamedFunction(module, "print_space");
+            print_space = LLVM.AddFunction(module, "print_space", LLVM.FunctionType(LLVM.VoidType(), Array.Empty<LLVMTypeRef>(), false));
+
+            LLVM.PositionBuilderAtEnd(builder, LLVM.AppendBasicBlock(print_space, "entry"));
+
+            callee = LLVM.GetNamedFunction(module, "printf");
+            indicies = new LLVMValueRef[] { LLVM.ConstInt(LLVM.Int32Type(), 0, false), LLVM.ConstInt(LLVM.Int32Type(), 0, false) };
+            gep = LLVM.BuildGEP(builder, str_space_glob, indicies, "t");
+            LLVM.BuildCall(builder, callee, new LLVMValueRef[] { gep }, "1");
+
+            LLVM.BuildRetVoid(builder);
+
+            // Create @skip()
+            var skip = LLVM.GetNamedFunction(module, "skip");
+            skip = LLVM.AddFunction(module, "skip", LLVM.FunctionType(LLVM.VoidType(), Array.Empty<LLVMTypeRef>(), false));
+
+            LLVM.PositionBuilderAtEnd(builder, LLVM.AppendBasicBlock(skip, "entry"));
+            LLVM.BuildRetVoid(builder);
+
+            // Create @print_int()
+            var print_int = LLVM.GetNamedFunction(module, "print_int");
+            print_int = LLVM.AddFunction(module, "print_int", LLVM.FunctionType(LLVM.VoidType(), new LLVMTypeRef[] { LLVM.Int32Type() }, false));
+
+            LLVM.PositionBuilderAtEnd(builder, LLVM.AppendBasicBlock(print_int, "entry"));
+
+            callee = LLVM.GetNamedFunction(module, "printf");
+            indicies = new LLVMValueRef[] { LLVM.ConstInt(LLVM.Int32Type(), 0, false), LLVM.ConstInt(LLVM.Int32Type(), 0, false) };
+            gep = LLVM.BuildGEP(builder, str_glob, indicies, "t");
+            LLVMValueRef param = LLVM.GetParam(print_int, 0);
+            LLVM.SetValueName(param, "x");
+
+            LLVM.BuildCall(builder, callee, new LLVMValueRef[] { gep, param}, "1");
+
+            LLVM.BuildRetVoid(builder);
+
+        }
+
+        private bool IsBuiltInFunction(string f) => Array.Exists(builtIntFunctions, x => x == f);
 
         private VarType ConvertType(string s) => s.Trim().ToLower() switch
         {
@@ -38,12 +153,12 @@ namespace CodeGen
 
         private LLVMValueRef CompileExp(Exp e) => e switch
         {
-            Num n => LLVM.ConstReal(LLVM.Int32Type(), n.I),
+            Num n => LLVM.ConstInt(LLVM.Int32Type(), (ulong)n.I, false),
             FNum fn => LLVM.ConstReal(LLVM.DoubleType(), fn.I),
             Var v => namedValues[v.S],
             Call c => CompileCall(c),
             If f => CompileIf(f),
-            Operation o => CompileFloatOperation(o),
+            Operation o => GetType(o) == VarType.INT ? CompileIntOperation(o) : CompileFloatOperation(o),
             Sequence => throw new NotImplementedException(),
             _ => throw new NotImplementedException()
         };
@@ -57,10 +172,11 @@ namespace CodeGen
             else
                 cond = CompileIntOperation(f.Cond);
             
-            return LLVM.BuildCondBr(builder,
+            return LLVM.BuildCondBr(
+                builder,
                 cond,
-                CompileExp(f.E1).AppendBasicBlock("iftmp"),
-                CompileExp(f.E2).AppendBasicBlock("iftmp")
+                CompileExp(f.E1).AppendBasicBlock("truetmp"),
+                CompileExp(f.E2).AppendBasicBlock("elsetmp")
             );
         }
 
@@ -79,11 +195,11 @@ namespace CodeGen
         {
             var calleeF = LLVM.GetNamedFunction(module, c.S);
             if (calleeF.Pointer == IntPtr.Zero)
-                throw new Exception($"Unknown function called: {c.S}");
+                throw new Exception($"Unknown function: {c.S}");
 
             if (LLVM.CountParams(calleeF) != c.Arguments.Count)
                 throw new Exception($"Incorrect no. arguments passed in function call: {c.S}");
-
+          
             LLVMValueRef[] argsV = new LLVMValueRef[c.Arguments.Count];
 
             for (int i = 0; i < c.Arguments.Count; i++)
@@ -91,7 +207,17 @@ namespace CodeGen
                 argsV[i] = CompileExp(c.Arguments[i]);
             }
 
-            return LLVM.BuildCall(this.builder, calleeF, argsV, "calltmp");
+            if (IsBuiltInFunction(c.S))
+            {
+                return LLVM.BuildCall(this.builder, calleeF, argsV, "");
+            }
+            else
+            {
+                return LLVM.BuildCall(this.builder, calleeF, argsV, "calltmp");
+            }
+
+
+            
         }
 
         private LLVMValueRef CompileFloatOperation(Operation node)
@@ -104,7 +230,7 @@ namespace CodeGen
                 OperationType.PLUS => LLVM.BuildFAdd(this.builder, l, r, "addtmp"),
                 OperationType.MINUS => LLVM.BuildFSub(this.builder, l, r, "subtmp"),
                 OperationType.TIMES => LLVM.BuildFMul(this.builder, l, r, "multmp"),
-                // should this be LLVM.BuildBrCond(...)?
+                // should this be LLVM.BuildFCmp()?
                 OperationType.LESS_THAN => LLVM.BuildUIToFP(this.builder, LLVM.BuildFCmp(this.builder, LLVMRealPredicate.LLVMRealOLT, l, r, "cmptmp"), LLVM.DoubleType(), "booltmp"),// Convert bool 0/1 to double 0.0 or 1.0
                 OperationType.DIVIDE => LLVM.BuildFDiv(this.builder, l, r, "divtmp"),
                 OperationType.MODULO => LLVM.BuildFRem(this.builder, l, r, "remtmp"),
@@ -183,7 +309,7 @@ namespace CodeGen
             return function;
         }
 
-        private LLVMValueRef CompileMainDef(Main m)
+        private LLVMValueRef CompileMainDef()
         {
             var func = LLVM.GetNamedFunction(module, "main");
             func = LLVM.AddFunction(module, "main", LLVM.FunctionType(LLVM.Int32Type(), new LLVMTypeRef[0], false));
@@ -228,15 +354,14 @@ namespace CodeGen
 
                     // validate code
                     LLVM.VerifyFunction(func, LLVMVerifierFailureAction.LLVMPrintMessageAction);
-
                     return func;
                 case Main m:
-                    LLVMValueRef main = CompileMainDef(m);
+                    LLVMValueRef main = CompileMainDef();
                     LLVM.PositionBuilderAtEnd(builder, LLVM.AppendBasicBlock(main, "main"));
 
                     LLVMValueRef _body = CompileExp(m.Body);
 
-                    LLVM.BuildRet(builder, _body);
+                    LLVM.BuildRet(builder, LLVM.ConstInt(LLVM.Int32Type(), 0, false));
 
                     LLVM.VerifyFunction(main, LLVMVerifierFailureAction.LLVMPrintMessageAction);
 
@@ -247,10 +372,17 @@ namespace CodeGen
                     var val = LLVM.ConstInt(LLVM.Int32Type(), (ulong)c.V, false);
                     con.SetInitializer(val);
 
+                    this.namedValues[c.Name] = val;
+
                     return con;
-                    //throw new NotImplementedException();
                 case FConst fc:
-                    throw new NotImplementedException();
+                    var fcon = CompileConstantDef(fc);
+                    var fval = LLVM.ConstReal(LLVM.DoubleType(), fc.X);
+                    fcon.SetInitializer(fval);
+
+                    this.namedValues[fc.Name] = fval;
+
+                    return fcon;
                 default:
                     throw new UnexpectedArgumentException("Unknown declaration received: " + d);
             }
@@ -258,6 +390,7 @@ namespace CodeGen
 
         public LLVMModuleRef GenerateCode(List<Decl> ast)
         {
+            CreatePrologue();
             foreach (Decl d in ast)
             {
                 CompileDecl(d);
