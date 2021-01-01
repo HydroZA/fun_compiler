@@ -7,6 +7,7 @@ namespace Parser.AbstractSyntaxTrees
     {
         INT,
         DOUBLE,
+        VOID,
         UNDEF
     }
     public abstract class Decl { }

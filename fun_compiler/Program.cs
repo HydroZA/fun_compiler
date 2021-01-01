@@ -10,48 +10,7 @@ namespace fun_compiler
 {
     class Program
     {
-
-        private const string PROLOGUE = @"
-declare i32 @printf(i8*, ...)
-
-@.str_nl = private constant [2 x i8] c""\0A\00""
-@.str_star = private constant[2 x i8] c""*\00""
-@.str_space = private constant[2 x i8] c"" \00""
-
-define void @new_line() #0 {
-    %t0 = getelementptr[2 x i8], [2 x i8]* @.str_nl, i32 0, i32 0
-    %1 = call i32(i8*, ...) @printf(i8* %t0)
-    ret void
-}
-
-define void @print_star() #0 {
-    %t0 = getelementptr[2 x i8], [2 x i8]* @.str_star, i32 0, i32 0
-    %t1 = call i32(i8*, ...) @printf(i8* %t0)
-    ret void
-}
-
-define void @print_space() #0 {
-    %t0 = getelementptr[2 x i8], [2 x i8]* @.str_space, i32 0, i32 0
-    %1 = call i32(i8 *, ...) @printf(i8 * % t0)
-    ret void
-}
-
-define void @skip() #0 {
-  ret void
-}
-
-@.str = private constant[4 x i8] c""%d\0A\00""
-
-define void @print_int(i32 %x)
-{
-   %t0 = getelementptr[4 x i8], [4 x i8]* @.str, i32 0, i32 0
-   call i32(i8*, ...) @printf(i8 * % t0, i32 % x)
-   ret void
-}
-; END OF PROLOGUE
-";
         private const string HELP_MSG = @"usage: FunCompiler.exe [args] <file>";
-
 
         static void Main(string[] args)
         {
@@ -126,12 +85,6 @@ define void @print_int(i32 %x)
 
             //LLVM.DumpModule(ir);
             LLVM.PrintModuleToFile(ir, outputFile, out _);
-
-            // hack to insert the built-in functions
-            /*StringBuilder irCode = new StringBuilder(File.ReadAllText(outputFile));
-            irCode.Insert(0, PROLOGUE);
-            File.WriteAllText(outputFile, irCode.ToString());
-            */
 
 
             Console.WriteLine("Done!");

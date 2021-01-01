@@ -602,7 +602,13 @@ namespace Parser
                 tokens.Pop();
 
                 string strType = tokens.Pop().Item2;
-                var returnType = strType == "Double" ? VarType.DOUBLE : VarType.INT;
+                var returnType = strType.Trim().ToLower() switch
+                {
+                    "double" => VarType.DOUBLE,
+                    "int" => VarType.INT,
+                    "void" => VarType.VOID,
+                    _ => VarType.UNDEF
+                };
 
                 //pop '='
                 tokens.Pop();

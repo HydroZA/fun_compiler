@@ -8,7 +8,7 @@ namespace CodeGen
 
     /* TODO
      * - Find out how to prepend built-in functions - DONE
-     * - Compiling If statements crashes when compiling the else branch
+     * - Compiling If statements crashes when compiling the else branch - KINDA FIXED
      * - Finish Operation definitions for CompileFloatOperation()
      * - Implement remaining Exps in CompileExps()
      */
@@ -17,7 +17,7 @@ namespace CodeGen
     {
         // the top-level structure that the LLVM IR uses to contain code
         private readonly LLVMModuleRef module;
-
+        
         // helper object that makes it easy to generate LLVM instructions.
         // Instances of the LLVMBuilderRef class template keep track of the
         // current place to insert instructions and has methods to create new instructions
@@ -29,7 +29,7 @@ namespace CodeGen
         // maintains a map of what type each variable, function, operation, etc takes
         private readonly Dictionary<string, VarType> typeEnv;
 
-        private readonly string[] builtIntFunctions;
+        private readonly string[] builtInFunctions;
 
         public LLVMCodeGen(string filename)
         {
@@ -37,7 +37,7 @@ namespace CodeGen
             builder = LLVM.CreateBuilder();
             namedValues = new Dictionary<string, LLVMValueRef>();
             typeEnv = new Dictionary<string, VarType>();
-            builtIntFunctions = new string[]
+            builtInFunctions = new string[]
             {
                 "new_line",
                 "print_star",
@@ -89,8 +89,7 @@ namespace CodeGen
 
             LLVM.BuildRetVoid(builder);
             LLVM.VerifyFunction(new_line, LLVMVerifierFailureAction.LLVMPrintMessageAction);
-
-
+            
             // Create @print_star()
             var print_star = LLVM.GetNamedFunction(module, "print_star");
             print_star = LLVM.AddFunction(module, "print_star", LLVM.FunctionType(LLVM.VoidType(), Array.Empty<LLVMTypeRef>(), false));
@@ -142,12 +141,13 @@ namespace CodeGen
 
         }
 
-        private bool IsBuiltInFunction(string f) => Array.Exists(builtIntFunctions, x => x == f);
+        private bool IsBuiltInFunction(string f) => Array.Exists(builtInFunctions, x => x == f);
 
         private VarType ConvertType(string s) => s.Trim().ToLower() switch
         {
             "int" => VarType.INT,
             "double" => VarType.DOUBLE,
+            "void" => VarType.VOID,
             _ => throw new UnexpectedArgumentException("Unable to define type: " + s)
         };
 
@@ -159,25 +159,54 @@ namespace CodeGen
             Call c => CompileCall(c),
             If f => CompileIf(f),
             Operation o => GetType(o) == VarType.INT ? CompileIntOperation(o) : CompileFloatOperation(o),
-            Sequence => throw new NotImplementedException(),
+            Sequence s => CompileSequence(s),
             _ => throw new NotImplementedException()
         };
 
-
+        private LLVMValueRef CompileSequence (Sequence s)
+        {
+            CompileExp(s.E1);
+            return CompileExp(s.E2);
+        }
         private LLVMValueRef CompileIf(If f)
         {
-            LLVMValueRef cond;
+            LLVMValueRef _if;
             if (GetType(f) == VarType.DOUBLE)
-                cond = CompileFloatOperation(f.Cond);
+                _if = CompileFloatOperation(f.Cond);
             else
-                cond = CompileIntOperation(f.Cond);
-            
-            return LLVM.BuildCondBr(
+                _if = CompileIntOperation(f.Cond);
+
+            //return LLVM.BuildSelect(builder, _if, CompileExp(f.E1), CompileExp(f.E2), "");
+
+            var thenBB = parent.AppendBasicBlock("then");
+            var elseBB = parent.AppendBasicBlock("else");
+          //  var mergeBB = parent.AppendBasicBlock("merge");
+
+            var condbr = LLVM.BuildCondBr(
                 builder,
-                cond,
-                CompileExp(f.E1).AppendBasicBlock("truetmp"),
-                CompileExp(f.E2).AppendBasicBlock("elsetmp")
+                _if,
+                thenBB,
+                elseBB
             );
+
+            LLVM.PositionBuilderAtEnd(builder, thenBB);
+            var thenVal = CompileExp(f.E1);
+            //LLVM.BuildBr(builder, mergeBB);
+            LLVM.BuildRetVoid(builder);
+
+            LLVM.PositionBuilderAtEnd(builder, elseBB);
+            var elseVal = CompileExp(f.E2);
+            // LLVM.BuildBr(builder, mergeBB);
+           // LLVM.BuildRetVoid(builder);
+
+            return condbr;
+         /*   LLVM.PositionBuilderAtEnd(builder, mergeBB);
+            var phi = LLVM.BuildPhi(builder, LLVM.VoidType(), "");
+            phi.AddIncoming(new LLVMValueRef[] { thenVal, elseVal }, new LLVMBasicBlockRef[] { thenBB, elseBB }, 2);
+            
+            return phi;
+           */ 
+
         }
 
         private VarType GetType(Exp e) => e switch
@@ -186,7 +215,7 @@ namespace CodeGen
             FNum => VarType.DOUBLE,
             Var v => typeEnv[v.S],
             Call c => typeEnv[c.S],
-            If f => GetType(f.E1) == GetType(f.E2) ? GetType(f.E1) : throw new Exception("Mismatched types in If expression"),
+            If f => GetType(f.Cond),//GetType(f.E1) == GetType(f.E2) ? GetType(f.E1) : throw new Exception("Mismatched types in If expression"),
             Operation o => GetType(o.A1),
             _ => throw new Exception("Unable to define type of: " + e)
         };
@@ -213,7 +242,7 @@ namespace CodeGen
             }
             else
             {
-                return LLVM.BuildCall(this.builder, calleeF, argsV, "calltmp");
+                return LLVM.BuildCall(this.builder, calleeF, argsV, "");
             }
 
 
@@ -230,15 +259,14 @@ namespace CodeGen
                 OperationType.PLUS => LLVM.BuildFAdd(this.builder, l, r, "addtmp"),
                 OperationType.MINUS => LLVM.BuildFSub(this.builder, l, r, "subtmp"),
                 OperationType.TIMES => LLVM.BuildFMul(this.builder, l, r, "multmp"),
-                // should this be LLVM.BuildFCmp()?
-                OperationType.LESS_THAN => LLVM.BuildUIToFP(this.builder, LLVM.BuildFCmp(this.builder, LLVMRealPredicate.LLVMRealOLT, l, r, "cmptmp"), LLVM.DoubleType(), "booltmp"),// Convert bool 0/1 to double 0.0 or 1.0
                 OperationType.DIVIDE => LLVM.BuildFDiv(this.builder, l, r, "divtmp"),
                 OperationType.MODULO => LLVM.BuildFRem(this.builder, l, r, "remtmp"),
-                OperationType.GREATER_THAN => throw new NotImplementedException(),
-                OperationType.LESS_THAN_OR_EQUAL => throw new NotImplementedException(),
-                OperationType.GREATER_THAN_OR_EQUAL => throw new NotImplementedException(),
-                OperationType.NOT_EQUAL => throw new NotImplementedException(),
-                OperationType.EQUAL => throw new NotImplementedException(),
+                OperationType.LESS_THAN => LLVM.BuildFCmp(builder, LLVMRealPredicate.LLVMRealOLT, l, r, "lttmp"),
+                OperationType.GREATER_THAN => LLVM.BuildFCmp(builder, LLVMRealPredicate.LLVMRealOGT, l, r, "gttmp"),
+                OperationType.LESS_THAN_OR_EQUAL => LLVM.BuildFCmp(builder, LLVMRealPredicate.LLVMRealOLE, l, r, "letmp"),
+                OperationType.GREATER_THAN_OR_EQUAL => LLVM.BuildFCmp(builder, LLVMRealPredicate.LLVMRealOGE, l, r, "getmp"),
+                OperationType.NOT_EQUAL => LLVM.BuildFCmp(builder, LLVMRealPredicate.LLVMRealONE, l, r, "netmp"),
+                OperationType.EQUAL => LLVM.BuildFCmp(builder, LLVMRealPredicate.LLVMRealOEQ, l, r, "eqtmp"),
                 _ => throw new Exception("invalid binary operator"),
             };
         }
@@ -270,10 +298,19 @@ namespace CodeGen
             var arguments = new LLVMTypeRef[Math.Max(d.Args.Count, 1)];
             var function = LLVM.GetNamedFunction(module, d.Name);
 
+            LLVMTypeRef ConvertToLLVMType (VarType v) => v switch
+            {
+                VarType.DOUBLE => LLVM.DoubleType(),
+                VarType.INT => LLVM.Int32Type(),
+                _ => throw new Exception("Invalid argument type in function: " + d.Name)
+            };
+
             if (d.Type == VarType.DOUBLE)
             {
                 for (int i = 0; i < d.Args.Count; ++i)
-                    arguments[i] = LLVM.DoubleType();
+                    // TODO convert Def.Args[] to be a VarType[] not (string,string)[]
+                    arguments[i] = ConvertToLLVMType(ConvertType(d.Args[i].Item2));
+                
                 function = LLVM.AddFunction(module, d.Name, LLVM.FunctionType(LLVM.DoubleType(), arguments, false));
 
                 // Add the function to the typing environment
@@ -283,10 +320,18 @@ namespace CodeGen
             else if (d.Type == VarType.INT)
             {
                 for (int i = 0; i < d.Args.Count; ++i)
-                    arguments[i] = LLVM.Int32Type();
+                    arguments[i] = ConvertToLLVMType(ConvertType(d.Args[i].Item2));
                 function = LLVM.AddFunction(module, d.Name, LLVM.FunctionType(LLVM.Int32Type(), arguments, false));
 
                 typeEnv.Add(d.Name, VarType.INT);
+            }
+            else if (d.Type == VarType.VOID)
+            {
+                for (int i = 0; i < d.Args.Count; ++i)
+                    arguments[i] = ConvertToLLVMType(ConvertType(d.Args[i].Item2));
+                function = LLVM.AddFunction(module, d.Name, LLVM.FunctionType(LLVM.VoidType(), arguments, false));
+
+                typeEnv.Add(d.Name, VarType.VOID);
             }
             else
                 throw new Exception("Return type unknown in function: " + d.Name);
@@ -298,7 +343,7 @@ namespace CodeGen
                 string argName = d.Args[i].Item1;
 
                 // add the variable to the typeEnv
-                typeEnv.Add(d.Args[i].Item1, ConvertType(d.Args[i].Item2));
+                typeEnv.AddOrUpdate(d.Args[i].Item1, ConvertType(d.Args[i].Item2));
 
                 LLVMValueRef param = LLVM.GetParam(function, (uint)i);
                 LLVM.SetValueName(param, argName);
@@ -340,6 +385,8 @@ namespace CodeGen
             return con;
         }
 
+        private LLVMValueRef parent;
+
         public LLVMValueRef CompileDecl(Decl d)
         {
             switch (d)
@@ -348,9 +395,13 @@ namespace CodeGen
                     LLVMValueRef func = CompileFunctionDef(de);
                     LLVM.PositionBuilderAtEnd(builder, LLVM.AppendBasicBlock(func, "entry"));
 
+                    parent = func;
                     LLVMValueRef body = CompileExp(de.body);
 
-                    LLVM.BuildRet(builder, body);
+                    if (de.Type == VarType.VOID)
+                        LLVM.BuildRetVoid(builder);                   
+                    else                  
+                        LLVM.BuildRet(builder, body);
 
                     // validate code
                     LLVM.VerifyFunction(func, LLVMVerifierFailureAction.LLVMPrintMessageAction);
